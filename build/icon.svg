@@ -1,0 +1,20 @@
+<svg width="512" height="512" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logo-gradient-new" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background Rect with fallback solid color -->
+  <rect x="10" y="15" width="80" height="70" rx="12" fill="#3B82F6" />
+  <rect x="10" y="15" width="80" height="70" rx="12" fill="url(#logo-gradient-new)" />
+  
+  <!-- Center Circles -->
+  <circle cx="50" cy="50" r="18" fill="white" fill-opacity="0.2" />
+  <circle cx="50" cy="50" r="12" stroke="white" stroke-width="4" fill="none" />
+  <circle cx="50" cy="50" r="4" fill="white" />
+  
+  <!-- Sparkles -->
+  <path d="M82 25L84.5 31L90.5 33.5L84.5 36L82 42L79.5 36L73.5 33.5L79.5 31L82 25Z" fill="#FFD700" />
+  <path d="M18 65L19.5 69L23.5 70.5L19.5 72L18 76L16.5 72L12.5 70.5L16.5 69L18 65Z" fill="white" fill-opacity="0.6" />
+</svg>

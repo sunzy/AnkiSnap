@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { ANKI_PROMPTS } from '../config/prompts';
+import log from 'electron-log';
 
 export interface LLMResult {
   english: string;
@@ -19,7 +20,7 @@ export abstract class LLMProvider {
 
 export class OpenAIProvider extends LLMProvider {
   async analyzeImage(base64Image: string, config: LLMConfig): Promise<LLMResult[]> {
-    console.log(`Calling OpenAI-compatible provider: ${config.model} at ${config.baseURL}`);
+    log.info(`Calling OpenAI-compatible provider: ${config.model} at ${config.baseURL}`);
     try {
       const payload: any = {
         model: config.model,
@@ -67,7 +68,7 @@ export class OpenAIProvider extends LLMProvider {
       );
 
       const content = response.data.choices[0].message.content;
-      console.log('LLM Raw Content:', content);
+      log.info('LLM Raw Content:', content);
       
       try {
         // Clean markdown code blocks if present
@@ -75,7 +76,7 @@ export class OpenAIProvider extends LLMProvider {
         const parsed = JSON.parse(jsonStr);
         return Array.isArray(parsed) ? parsed : (parsed.results || parsed.data || parsed.items || []);
       } catch (e) {
-        console.error('Failed to parse JSON from LLM content:', e);
+        log.error('Failed to parse JSON from LLM content:', e);
         // Fallback: try to find anything that looks like a JSON array
         const arrayMatch = content.match(/\[[\s\S]*\]/);
         if (arrayMatch) {
@@ -84,7 +85,7 @@ export class OpenAIProvider extends LLMProvider {
         throw new Error('Response format was not valid JSON array');
       }
     } catch (error: any) {
-      console.error('OpenAI Provider Error:', error.response?.data || error.message);
+      log.error('OpenAI Provider Error:', error.response?.data || error.message);
       throw new Error(error.response?.data?.error?.message || error.message || 'Unknown provider error');
     }
   }
@@ -92,7 +93,7 @@ export class OpenAIProvider extends LLMProvider {
 
 export class DashScopeProvider extends LLMProvider {
   async analyzeImage(base64Image: string, config: LLMConfig): Promise<LLMResult[]> {
-    console.log(`Calling DashScope: ${config.model}`);
+    log.info(`Calling DashScope: ${config.model}`);
     try {
       const response = await axios.post(
         config.baseURL || 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation',
@@ -129,18 +130,18 @@ export class DashScopeProvider extends LLMProvider {
                       response.data.output?.text || 
                       '';
       
-      console.log('DashScope Raw Content:', content);
+      log.info('DashScope Raw Content:', content);
 
       try {
         const jsonMatch = content.match(/\[[\s\S]*\]/);
         const jsonStr = jsonMatch ? jsonMatch[0] : content;
         return JSON.parse(jsonStr);
       } catch (e) {
-        console.error('Failed to parse DashScope response:', content);
+        log.error('Failed to parse DashScope response:', content);
         throw new Error('Failed to parse results from DashScope');
       }
     } catch (error: any) {
-      console.error('DashScope Provider Error:', error.response?.data || error.message);
+      log.error('DashScope Provider Error:', error.response?.data || error.message);
       throw new Error(error.response?.data?.message || error.message || 'DashScope error');
     }
   }

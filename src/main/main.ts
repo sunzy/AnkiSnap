@@ -1,5 +1,11 @@
 import { app, BrowserWindow, ipcMain, safeStorage } from 'electron'
 import { join } from 'path'
+import log from 'electron-log'
+
+// Configure logging
+log.transports.file.level = 'info'
+log.transports.file.resolvePathFn = () => join(app.getPath('userData'), 'logs/main.log')
+log.info('App starting...')
 
 let mainWindow: BrowserWindow | null = null
 // ... rest of imports (will be handled by rollup/vite)
@@ -16,6 +22,7 @@ function createWindow() {
     frame: false,
     alwaysOnTop: false,
     transparent: true,
+    icon: join(__dirname, '../build/icon.ico'),
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
       nodeIntegration: false,

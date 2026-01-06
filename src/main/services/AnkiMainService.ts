@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { ipcMain } from 'electron';
+import log from 'electron-log';
 
 const ANKI_CONNECT_URL = 'http://127.0.0.1:8765';
 
@@ -60,7 +61,7 @@ export function setupAnkiHandlers() {
 
         if (data.error) {
           if (data.error.includes('duplicate')) {
-            console.log('Duplicate detected, attempting to overwrite...');
+            log.info('Duplicate detected, attempting to overwrite...');
             
             const cleanFront = note.fields.Front
               .replace(/[\n\r]/g, ' ')
@@ -83,7 +84,7 @@ export function setupAnkiHandlers() {
 
             const noteIds = findData.result;
             if (noteIds && noteIds.length > 0) {
-              console.log(`Found existing note IDs: ${noteIds}. Updating the first one...`);
+              log.info(`Found existing note IDs: ${noteIds}. Updating the first one...`);
               await fetch(ANKI_CONNECT_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Connection': 'close' },
@@ -107,7 +108,7 @@ export function setupAnkiHandlers() {
         return data.result;
       } catch (error: any) {
         lastError = error;
-        console.error(`AnkiConnect attempt ${i + 1} failed:`, error.message);
+        log.error(`AnkiConnect attempt ${i + 1} failed:`, error.message);
         
         // 如果是连接重置或超时，等待更久一点再重试
         if (error.message.includes('fetch failed') || error.name === 'AbortError' || error.message.includes('reset')) {
