@@ -156,7 +156,7 @@ function App() {
       </div>
 
       {/* Main Content */}
-      <div className="overflow-y-auto p-4 space-y-4 flex flex-col">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {ankiError && (
           <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 text-red-600 text-xs">
             <AlertCircle size={14} className="mt-0.5 shrink-0" />
@@ -168,7 +168,7 @@ function App() {
         )}
 
         <div className="flex flex-col space-y-4">
-          <div className="h-[320px] w-full relative">
+          <div className="h-[280px] w-full relative shrink-0">
             {!image ? (
               <div className="h-full w-full border-2 border-dashed border-blue-100 rounded-2xl flex flex-col items-center justify-center text-slate-400 gap-4 bg-white/50 backdrop-blur-sm transition-all hover:border-blue-200 hover:bg-white/80">
                 <div className="relative">
@@ -200,21 +200,6 @@ function App() {
             )}
           </div>
 
-          {results.length === 0 && !loading && (
-            <button
-              onClick={startAnalysis}
-              disabled={!image}
-              className={cn(
-                "w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md",
-                image 
-                  ? "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200" 
-                  : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
-              )}
-            >
-              <Play size={18} fill="currentColor" /> Start AI Analysis
-            </button>
-          )}
-
           {loading && (
             <div className="flex flex-col items-center py-8 gap-3">
               <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -223,7 +208,7 @@ function App() {
           )}
 
           {results.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-3 pb-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Analysis Results</h3>
                 <button 
@@ -239,9 +224,21 @@ function App() {
               {results.map((item, idx) => (
                 <div key={idx} className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
                   <div className="text-sm font-semibold text-slate-800 leading-tight">
-                    <input 
-                      className="w-full bg-transparent focus:outline-none" 
+                    <textarea 
+                      className="w-full bg-transparent focus:outline-none resize-none overflow-hidden break-words" 
                       value={item.english} 
+                      rows={1}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
+                      ref={(tag) => {
+                        if (tag) {
+                          tag.style.height = 'auto';
+                          tag.style.height = tag.scrollHeight + 'px';
+                        }
+                      }}
                       onChange={(e) => {
                         const newResults = [...results]
                         newResults[idx].english = e.target.value
@@ -250,9 +247,21 @@ function App() {
                     />
                   </div>
                   <div className="text-xs text-slate-600">
-                    <input 
-                      className="w-full bg-transparent focus:outline-none" 
+                    <textarea 
+                      className="w-full bg-transparent focus:outline-none resize-none overflow-hidden break-words" 
                       value={item.chinese} 
+                      rows={1}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
+                      ref={(tag) => {
+                        if (tag) {
+                          tag.style.height = 'auto';
+                          tag.style.height = tag.scrollHeight + 'px';
+                        }
+                      }}
                       onChange={(e) => {
                         const newResults = [...results]
                         newResults[idx].chinese = e.target.value
@@ -265,15 +274,45 @@ function App() {
                   />
                 </div>
               ))}
-              <button
-                onClick={syncToAnki}
-                className="w-full py-3 bg-green-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-green-700 transition-all shadow-md shadow-green-200"
-              >
-                <CheckCircle2 size={18} /> Sync to Anki
-              </button>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Fixed Footer Actions */}
+      <div className="p-4 bg-white border-t border-gray-100 shrink-0">
+        {results.length === 0 ? (
+          <button
+            onClick={startAnalysis}
+            disabled={!image || loading}
+            className={cn(
+              "w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md",
+              image && !loading
+                ? "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200" 
+                : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
+            )}
+          >
+            {loading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Play size={18} fill="currentColor" />
+            )}
+            {loading ? "Analyzing..." : "Start AI Analysis"}
+          </button>
+        ) : (
+          <button
+            onClick={syncToAnki}
+            disabled={loading}
+            className="w-full py-3 bg-green-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-green-700 transition-all shadow-md shadow-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <CheckCircle2 size={18} />
+            )}
+            {loading ? "Syncing..." : "Sync to Anki"}
+          </button>
+        )}
       </div>
 
       {isSettingsOpen && <SettingsPage onClose={() => setIsSettingsOpen(false)} />}
@@ -281,11 +320,11 @@ function App() {
       {/* Toast Notification */}
       {toast && (
         <div className={cn(
-          "fixed top-14 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full shadow-2xl text-white text-xs font-bold transition-all animate-in fade-in slide-in-from-top-4 duration-300 z-50 flex items-center gap-2",
-          toast.type === 'success' ? "bg-green-600" : "bg-red-600"
+          "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-6 py-3 rounded-2xl shadow-2xl text-white text-sm font-bold transition-all animate-in fade-in zoom-in duration-300 z-50 flex flex-col items-center gap-3 min-w-[120px]",
+          toast.type === 'success' ? "bg-green-600/95 backdrop-blur-md" : "bg-red-600/95 backdrop-blur-md"
         )}>
-          {toast.type === 'success' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
-          {toast.message}
+          {toast.type === 'success' ? <CheckCircle2 size={32} /> : <AlertCircle size={32} />}
+          <span>{toast.message}</span>
         </div>
       )}
     </div>

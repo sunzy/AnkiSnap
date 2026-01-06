@@ -2,25 +2,27 @@
   "name": "ankisnap",
   "private": true,
   "version": "0.1.0",
+  "description": "An AI-powered tool to convert images to Anki cards",
+  "author": "AnkiSnap Team",
   "main": "dist-electron/main.js",
   "type": "commonjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "dist": "npm run build && electron-builder"
+    "dist": "set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ && npm run build && electron-builder"
   },
   "build": {
     "appId": "com.ankisnap.app",
     "productName": "AnkiSnap",
     "directories": {
-      "output": "release"
+      "output": "dist-release"
     },
     "files": [
       "dist",
       "dist-electron"
     ],
     "win": {
-      "target": "dir"
+      "target": "portable"
     },
     "cscLink": null,
     "cscKeyPassword": null

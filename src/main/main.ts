@@ -11,8 +11,8 @@ const llmAdapter = new LLMAdapter()
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 450,
-    height: 700,
+    width: 400,
+    height: 620,
     frame: false,
     alwaysOnTop: false,
     transparent: true,
