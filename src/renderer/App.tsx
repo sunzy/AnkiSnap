@@ -23,6 +23,12 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false)
   const [ankiError, setAnkiError] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null)
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3000)
+  }
 
   const handlePaste = useCallback((e: ClipboardEvent) => {
     const items = e.clipboardData?.items
@@ -68,7 +74,7 @@ function App() {
       setResults(res)
     } catch (error: any) {
       console.error('Analysis failed', error)
-      alert(`Analysis failed: ${error.message || 'Check your API key and network'}`)
+      showToast(error.message || 'Check your API key and network', 'error')
     } finally {
       setLoading(false)
     }
@@ -94,11 +100,11 @@ function App() {
           },
         })
       }
-      alert('Successfully synced to Anki!')
+      showToast('Successfully synced to Anki!')
       setResults([])
       setImage(null)
     } catch (error: any) {
-      alert(`Sync failed: ${error.message}`)
+      showToast(`Sync failed: ${error.message}`, 'error')
     } finally {
       setLoading(false)
     }
@@ -150,7 +156,7 @@ function App() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="overflow-y-auto p-4 space-y-4 flex flex-col">
         {ankiError && (
           <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 text-red-600 text-xs">
             <AlertCircle size={14} className="mt-0.5 shrink-0" />
@@ -161,101 +167,127 @@ function App() {
           </div>
         )}
 
-        {!image ? (
-          <div className="h-64 border-2 border-dashed border-blue-100 rounded-2xl flex flex-col items-center justify-center text-slate-400 gap-4 bg-white/50 backdrop-blur-sm transition-all hover:border-blue-200 hover:bg-white/80">
-            <div className="relative">
-              <Logo size={64} className="opacity-80" />
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white border-2 border-white shadow-sm">
-                <ImageIcon size={12} />
+        <div className="flex flex-col space-y-4">
+          <div className="h-[320px] w-full relative">
+            {!image ? (
+              <div className="h-full w-full border-2 border-dashed border-blue-100 rounded-2xl flex flex-col items-center justify-center text-slate-400 gap-4 bg-white/50 backdrop-blur-sm transition-all hover:border-blue-200 hover:bg-white/80">
+                <div className="relative">
+                  <Logo size={64} className="opacity-80" />
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white border-2 border-white shadow-sm">
+                    <ImageIcon size={12} />
+                  </div>
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-semibold text-slate-600">Snap & Learn</p>
+                  <p className="text-[10px] text-slate-400">Paste (Ctrl+V) any image to start</p>
+                </div>
               </div>
-            </div>
-            <div className="text-center space-y-1">
-              <p className="text-sm font-semibold text-slate-600">Snap & Learn</p>
-              <p className="text-[10px] text-slate-400">Paste (Ctrl+V) any image to start</p>
-            </div>
+            ) : (
+              <div className="h-full w-full relative group bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden flex items-center justify-center">
+                <img src={image} className="max-h-full max-w-full object-contain" alt="Pasted" />
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => {
+                      setImage(null)
+                      setResults([])
+                    }}
+                    className="p-1.5 bg-white/90 backdrop-blur text-red-500 rounded-full shadow-lg hover:bg-red-50"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="relative group">
-            <img src={image} className="w-full rounded-xl shadow-sm border border-slate-200" alt="Pasted" />
-            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button 
-                onClick={() => setImage(null)}
-                className="p-1.5 bg-white/90 backdrop-blur text-red-500 rounded-full shadow-lg hover:bg-red-50"
+
+          {results.length === 0 && !loading && (
+            <button
+              onClick={startAnalysis}
+              disabled={!image}
+              className={cn(
+                "w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md",
+                image 
+                  ? "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200" 
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
+              )}
+            >
+              <Play size={18} fill="currentColor" /> Start AI Analysis
+            </button>
+          )}
+
+          {loading && (
+            <div className="flex flex-col items-center py-8 gap-3">
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-slate-500 font-medium">Processing...</p>
+            </div>
+          )}
+
+          {results.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Analysis Results</h3>
+                <button 
+                  onClick={() => {
+                    setResults([])
+                    setImage(null)
+                  }}
+                  className="text-[10px] text-red-500 hover:underline"
+                >
+                  Discard All
+                </button>
+              </div>
+              {results.map((item, idx) => (
+                <div key={idx} className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
+                  <div className="text-sm font-semibold text-slate-800 leading-tight">
+                    <input 
+                      className="w-full bg-transparent focus:outline-none" 
+                      value={item.english} 
+                      onChange={(e) => {
+                        const newResults = [...results]
+                        newResults[idx].english = e.target.value
+                        setResults(newResults)
+                      }}
+                    />
+                  </div>
+                  <div className="text-xs text-slate-600">
+                    <input 
+                      className="w-full bg-transparent focus:outline-none" 
+                      value={item.chinese} 
+                      onChange={(e) => {
+                        const newResults = [...results]
+                        newResults[idx].chinese = e.target.value
+                        setResults(newResults)
+                      }}
+                    />
+                  </div>
+                  <div className="text-[10px] text-slate-500 bg-white p-3 rounded-lg border border-slate-100 leading-relaxed overflow-y-auto max-h-[200px]" 
+                    dangerouslySetInnerHTML={{ __html: item.grammar }}
+                  />
+                </div>
+              ))}
+              <button
+                onClick={syncToAnki}
+                className="w-full py-3 bg-green-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-green-700 transition-all shadow-md shadow-green-200"
               >
-                <Trash2 size={16} />
+                <CheckCircle2 size={18} /> Sync to Anki
               </button>
             </div>
-          </div>
-        )}
-
-        {image && results.length === 0 && !loading && (
-          <button
-            onClick={startAnalysis}
-            className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-md shadow-blue-200"
-          >
-            <Play size={18} fill="currentColor" /> Start AI Analysis
-          </button>
-        )}
-
-        {loading && (
-          <div className="flex flex-col items-center py-8 gap-3">
-            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-slate-500 font-medium">Processing...</p>
-          </div>
-        )}
-
-        {results.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Analysis Results</h3>
-            {results.map((item, idx) => (
-              <div key={idx} className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
-                <div className="text-sm font-semibold text-slate-800 leading-tight">
-                  <input 
-                    className="w-full bg-transparent focus:outline-none" 
-                    value={item.english} 
-                    onChange={(e) => {
-                      const newResults = [...results]
-                      newResults[idx].english = e.target.value
-                      setResults(newResults)
-                    }}
-                  />
-                </div>
-                <div className="text-xs text-slate-600">
-                  <input 
-                    className="w-full bg-transparent focus:outline-none" 
-                    value={item.chinese} 
-                    onChange={(e) => {
-                      const newResults = [...results]
-                      newResults[idx].chinese = e.target.value
-                      setResults(newResults)
-                    }}
-                  />
-                </div>
-                <div className="text-[10px] text-slate-400 italic bg-white p-2 rounded-lg border border-slate-100">
-                  <textarea 
-                    className="w-full bg-transparent focus:outline-none resize-none" 
-                    rows={2}
-                    value={item.grammar} 
-                    onChange={(e) => {
-                      const newResults = [...results]
-                      newResults[idx].grammar = e.target.value
-                      setResults(newResults)
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-            <button
-              onClick={syncToAnki}
-              className="w-full py-3 bg-green-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-green-700 transition-all shadow-md shadow-green-200"
-            >
-              <CheckCircle2 size={18} /> Sync to Anki
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {isSettingsOpen && <SettingsPage onClose={() => setIsSettingsOpen(false)} />}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={cn(
+          "fixed top-14 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full shadow-2xl text-white text-xs font-bold transition-all animate-in fade-in slide-in-from-top-4 duration-300 z-50 flex items-center gap-2",
+          toast.type === 'success' ? "bg-green-600" : "bg-red-600"
+        )}>
+          {toast.type === 'success' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+          {toast.message}
+        </div>
+      )}
     </div>
   )
 }

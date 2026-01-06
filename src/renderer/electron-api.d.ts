@@ -6,6 +6,10 @@ export interface ElectronAPI {
   toggleAlwaysOnTop: () => Promise<boolean>;
   getSettings: () => Promise<any>;
   saveSettings: (settings: any) => Promise<boolean>;
+  ankiCheckConnection: () => Promise<boolean>;
+  ankiAddNote: (note: any) => Promise<any>;
+  minimizeWindow: () => Promise<void>;
+  closeWindow: () => Promise<void>;
 }
 
 

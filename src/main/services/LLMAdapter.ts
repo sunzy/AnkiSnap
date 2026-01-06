@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ANKI_PROMPTS } from '../config/prompts';
 
 export interface LLMResult {
   english: string;
@@ -25,12 +26,12 @@ export class OpenAIProvider extends LLMProvider {
         messages: [
           {
             role: 'system',
-            content: '你是一位资深的英语老师。请分析图片并提取其中的英文句子、对应的中文翻译以及简短的语法解析。请务必使用中文回答“chinese”和“grammar”部分。输出格式必须是一个 JSON 数组，包含 "english", "chinese", 和 "grammar" 三个键。示例: [{"english": "Hello", "chinese": "你好", "grammar": "常用的问候语"}]',
+            content: ANKI_PROMPTS.SYSTEM_PROMPT,
           },
           {
             role: 'user',
             content: [
-              { type: 'text', text: '分析这张图片并以指定的 JSON 数组格式输出结果，语法解析请使用中文：' },
+              { type: 'text', text: ANKI_PROMPTS.USER_PROMPT_PREFIX },
               {
                 type: 'image_url',
                 image_url: {
@@ -101,13 +102,13 @@ export class DashScopeProvider extends LLMProvider {
             messages: [
               {
                 role: 'system',
-                content: '你是一位资深的英语老师。请分析图片并提取其中的英文句子、对应的中文翻译以及简短的语法解析。请务必使用中文回答“chinese”和“grammar”部分。输出格式必须是一个 JSON 数组，包含 "english", "chinese", 和 "grammar" 三个键。',
+                content: ANKI_PROMPTS.SYSTEM_PROMPT,
               },
               {
                 role: 'user',
                 content: [
                   { image: `data:image/jpeg;base64,${base64Image}` },
-                  { text: '请分析这张图片，并以指定的 JSON 格式提供结果，语法解析请使用中文。' },
+                  { text: ANKI_PROMPTS.USER_PROMPT_PREFIX },
                 ],
               },
             ],

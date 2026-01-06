@@ -6,8 +6,24 @@
   "type": "commonjs",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && electron-builder",
-    "preview": "vite preview"
+    "build": "tsc && vite build",
+    "dist": "npm run build && electron-builder"
+  },
+  "build": {
+    "appId": "com.ankisnap.app",
+    "productName": "AnkiSnap",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist",
+      "dist-electron"
+    ],
+    "win": {
+      "target": "dir"
+    },
+    "cscLink": null,
+    "cscKeyPassword": null
   },
   "dependencies": {
     "react": "^18.3.1",
