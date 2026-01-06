@@ -28,35 +28,38 @@ export function setupAnkiHandlers() {
   });
 
   ipcMain.handle('anki-add-note', async (_, note: AnkiNote) => {
-    const axiosConfig = {
-      timeout: 10000,
-      headers: {
-        'Connection': 'close'
-      }
-    };
-
     const maxRetries = 3;
     let lastError: any = null;
 
     for (let i = 0; i < maxRetries; i++) {
       try {
-        // 1. Try to add the note
-        const response = await axios.post(ANKI_CONNECT_URL, {
-          action: 'addNote',
-          version: 6,
-          params: {
-            note: {
-              ...note,
-              options: {
-                allowDuplicate: false,
+        // 使用原生 fetch 替代 axios，有时 axios 的连接池管理会导致 ECONNRESET
+        const response = await fetch(ANKI_CONNECT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Connection': 'close'
+          },
+          body: JSON.stringify({
+            action: 'addNote',
+            version: 6,
+            params: {
+              note: {
+                ...note,
+                options: {
+                  allowDuplicate: false,
+                },
               },
             },
-          },
-        }, axiosConfig);
+          }),
+          // 设置超时
+          signal: AbortSignal.timeout(10000)
+        });
 
-        if (response.data.error) {
-          // 2. If it's a duplicate error, try to update the existing note
-          if (response.data.error.includes('duplicate')) {
+        const data: any = await response.json();
+
+        if (data.error) {
+          if (data.error.includes('duplicate')) {
             console.log('Duplicate detected, attempting to overwrite...');
             
             const cleanFront = note.fields.Front
@@ -64,52 +67,57 @@ export function setupAnkiHandlers() {
               .replace(/[\\"]/g, '\\$&')
               .trim();
 
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, i === 0 ? 300 : 500));
 
-            const findResponse = await axios.post(ANKI_CONNECT_URL, {
-              action: 'findNotes',
-              version: 6,
-              params: {
-                query: `front:"${cleanFront}"`
-              }
-            }, axiosConfig);
+            const findResponse = await fetch(ANKI_CONNECT_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Connection': 'close' },
+              body: JSON.stringify({
+                action: 'findNotes',
+                version: 6,
+                params: { query: `front:"${cleanFront}"` }
+              }),
+              signal: AbortSignal.timeout(5000)
+            });
+            const findData: any = await findResponse.json();
 
-            const noteIds = findResponse.data.result;
+            const noteIds = findData.result;
             if (noteIds && noteIds.length > 0) {
               console.log(`Found existing note IDs: ${noteIds}. Updating the first one...`);
-              await axios.post(ANKI_CONNECT_URL, {
-                action: 'updateNoteFields',
-                version: 6,
-                params: {
-                  note: {
-                    id: noteIds[0],
-                    fields: note.fields
+              await fetch(ANKI_CONNECT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Connection': 'close' },
+                body: JSON.stringify({
+                  action: 'updateNoteFields',
+                  version: 6,
+                  params: {
+                    note: {
+                      id: noteIds[0],
+                      fields: note.fields
+                    }
                   }
-                }
-              }, axiosConfig);
+                }),
+                signal: AbortSignal.timeout(5000)
+              });
               return 'updated';
             }
           }
-          throw new Error(response.data.error);
+          throw new Error(data.error);
         }
-        return response.data.result;
+        return data.result;
       } catch (error: any) {
         lastError = error;
-        console.error(`AnkiConnect attempt ${i + 1} failed:`, error.code || error.message);
+        console.error(`AnkiConnect attempt ${i + 1} failed:`, error.message);
         
-        // 如果是连接重置，等待更久一点再重试
-        if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT') {
-          await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)));
+        // 如果是连接重置或超时，等待更久一点再重试
+        if (error.message.includes('fetch failed') || error.name === 'AbortError' || error.message.includes('reset')) {
+          await new Promise(resolve => setTimeout(resolve, 800 * (i + 1)));
           continue;
         }
-        // 其他错误直接抛出
         break;
       }
     }
 
-    if (lastError.code === 'ECONNRESET') {
-      throw new Error('与 Anki 的连接多次重置 (ECONNRESET)。请检查 Anki 是否已开启 AnkiConnect 且没有被防火墙拦截，然后重试。');
-    }
-    throw new Error(lastError.response?.data?.error || lastError.message);
+    throw new Error(`与 Anki 的连接多次失败。错误信息: ${lastError.message}。请确保 Anki 保持开启状态，且 AnkiConnect 插件配置正确（默认端口 8765）。`);
   });
 }
