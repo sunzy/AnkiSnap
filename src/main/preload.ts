@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveSettings: (settings: any) => ipcRenderer.invoke('save-settings', settings),
   ankiCheckConnection: () => ipcRenderer.invoke('anki-check-connection'),
   ankiAddNote: (note: any) => ipcRenderer.invoke('anki-add-note', note),
+  minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
+  closeWindow: () => ipcRenderer.invoke('close-window'),
 })
 
 

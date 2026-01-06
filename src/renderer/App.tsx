@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Settings as SettingsIcon, Image as ImageIcon, Trash2, Play, CheckCircle2, Pin, PinOff, AlertCircle } from 'lucide-react'
+import { Settings as SettingsIcon, Image as ImageIcon, Trash2, Play, CheckCircle2, Pin, PinOff, AlertCircle, Minus, X } from 'lucide-react'
 import SettingsPage from './pages/SettingsPage'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -113,12 +113,14 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-white text-slate-800 font-sans overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between p-3 bg-slate-50 border-b drag">
+    <div className="h-screen w-screen bg-[#f5f5f7] flex flex-col overflow-hidden text-[#1d1d1f] font-sans select-none">
+      {/* Custom Title Bar */}
+      <div className="h-10 flex items-center justify-between px-4 bg-white/80 backdrop-blur-md border-b border-gray-200 drag shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
-          <h1 className="text-sm font-bold tracking-tight">AnkiSnap</h1>
+          <div className="w-5 h-5 bg-blue-500 rounded flex items-center justify-center">
+            <span className="text-[10px] text-white font-bold">AS</span>
+          </div>
+          <span className="text-xs font-medium text-gray-500">AnkiSnap</span>
         </div>
         <div className="flex items-center gap-1 no-drag">
           <button 
@@ -132,6 +134,18 @@ function App() {
             className="p-1.5 text-slate-400 hover:bg-slate-200 rounded-md transition-colors"
           >
             <SettingsIcon size={16} />
+          </button>
+          <button 
+            onClick={() => window.electronAPI.minimizeWindow()}
+            className="p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500"
+          >
+            <Minus size={14} />
+          </button>
+          <button 
+            onClick={() => window.electronAPI.closeWindow()}
+            className="p-1.5 hover:bg-red-50 text-gray-500 hover:text-red-500 rounded-md transition-colors"
+          >
+            <X size={14} />
           </button>
         </div>
       </div>
@@ -235,11 +249,6 @@ function App() {
       </div>
 
       {isSettingsOpen && <SettingsPage onClose={() => setIsSettingsOpen(false)} />}
-      
-      <style>{`
-        .drag { -webkit-app-region: drag; }
-        .no-drag { -webkit-app-region: no-drag; }
-      `}</style>
     </div>
   )
 }

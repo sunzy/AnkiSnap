@@ -71,6 +71,18 @@ ipcMain.handle('toggle-always-on-top', () => {
   return false
 })
 
+ipcMain.handle('minimize-window', () => {
+  if (mainWindow) {
+    mainWindow.minimize()
+  }
+})
+
+ipcMain.handle('close-window', () => {
+  if (mainWindow) {
+    mainWindow.close()
+  }
+})
+
 // Security Handlers
 ipcMain.handle('encrypt', (_, text: string) => {
   if (!text) return ''
