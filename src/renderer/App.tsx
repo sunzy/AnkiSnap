@@ -292,11 +292,7 @@ function App() {
                 : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
             )}
           >
-            {loading ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Play size={18} fill="currentColor" />
-            )}
+            {!loading && <Play size={18} fill="currentColor" />}
             {loading ? "Analyzing..." : "Start AI Analysis"}
           </button>
         ) : (
@@ -305,11 +301,7 @@ function App() {
             disabled={loading}
             className="w-full py-3 bg-green-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-green-700 transition-all shadow-md shadow-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <CheckCircle2 size={18} />
-            )}
+            {!loading && <CheckCircle2 size={18} />}
             {loading ? "Syncing..." : "Sync to Anki"}
           </button>
         )}
