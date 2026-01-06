@@ -4,6 +4,7 @@ import SettingsPage from './pages/SettingsPage'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { addNoteToAnki, checkAnkiConnection } from './services/AnkiService'
+import Logo from './components/Logo'
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -115,13 +116,11 @@ function App() {
   return (
     <div className="h-screen w-screen bg-[#f5f5f7] flex flex-col overflow-hidden text-[#1d1d1f] font-sans select-none">
       {/* Custom Title Bar */}
-      <div className="h-10 flex items-center justify-between px-4 bg-white/80 backdrop-blur-md border-b border-gray-200 drag shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 bg-blue-500 rounded flex items-center justify-center">
-            <span className="text-[10px] text-white font-bold">AS</span>
-          </div>
-          <span className="text-xs font-medium text-gray-500">AnkiSnap</span>
-        </div>
+       <div className="h-10 flex items-center justify-between px-4 bg-white/80 backdrop-blur-md border-b border-gray-200 drag shrink-0">
+         <div className="flex items-center gap-2">
+           <Logo size={20} />
+           <span className="text-xs font-bold text-gray-700 tracking-tight">AnkiSnap</span>
+         </div>
         <div className="flex items-center gap-1 no-drag">
           <button 
             onClick={toggleAlwaysOnTop}
@@ -163,9 +162,17 @@ function App() {
         )}
 
         {!image ? (
-          <div className="h-48 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-400 gap-2 bg-slate-50">
-            <ImageIcon size={32} />
-            <p className="text-xs">Paste (Ctrl+V) image here</p>
+          <div className="h-64 border-2 border-dashed border-blue-100 rounded-2xl flex flex-col items-center justify-center text-slate-400 gap-4 bg-white/50 backdrop-blur-sm transition-all hover:border-blue-200 hover:bg-white/80">
+            <div className="relative">
+              <Logo size={64} className="opacity-80" />
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white border-2 border-white shadow-sm">
+                <ImageIcon size={12} />
+              </div>
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-semibold text-slate-600">Snap & Learn</p>
+              <p className="text-[10px] text-slate-400">Paste (Ctrl+V) any image to start</p>
+            </div>
           </div>
         ) : (
           <div className="relative group">
