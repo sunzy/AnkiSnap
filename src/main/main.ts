@@ -1,11 +1,38 @@
 import { app, BrowserWindow, ipcMain, safeStorage } from 'electron'
 import { join } from 'path'
 import log from 'electron-log'
+import fs from 'fs'
 
 // Configure logging
 log.transports.file.level = 'info'
 log.transports.file.resolvePathFn = () => join(app.getPath('userData'), 'logs/main.log')
 log.info('App starting...')
+
+const SETTINGS_PATH = join(app.getPath('userData'), 'settings.json')
+
+// Helper to encrypt sensitive data
+function encrypt(text: string) {
+  if (!text) return ''
+  try {
+    if (!safeStorage.isEncryptionAvailable()) return text
+    return safeStorage.encryptString(text).toString('base64')
+  } catch (e) {
+    log.error('Encryption failed', e)
+    return text
+  }
+}
+
+// Helper to decrypt sensitive data
+function decrypt(encryptedText: string) {
+  if (!encryptedText) return ''
+  try {
+    if (!safeStorage.isEncryptionAvailable()) return encryptedText
+    return safeStorage.decryptString(Buffer.from(encryptedText, 'base64'))
+  } catch (e) {
+    // If decryption fails, it might be plain text or from another machine
+    return encryptedText
+  }
+}
 
 let mainWindow: BrowserWindow | null = null
 // ... rest of imports (will be handled by rollup/vite)
@@ -87,6 +114,46 @@ ipcMain.handle('minimize-window', () => {
 ipcMain.handle('close-window', () => {
   if (mainWindow) {
     mainWindow.close()
+  }
+})
+
+// Settings management
+ipcMain.handle('get-settings', () => {
+  try {
+    if (fs.existsSync(SETTINGS_PATH)) {
+      const data = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'))
+      // Decrypt sensitive fields
+      if (data.providers) {
+        Object.keys(data.providers).forEach(key => {
+          if (data.providers[key].apiKey) {
+            data.providers[key].apiKey = decrypt(data.providers[key].apiKey)
+          }
+        })
+      }
+      return data
+    }
+  } catch (e) {
+    log.error('Failed to read settings', e)
+  }
+  return null
+})
+
+ipcMain.handle('save-settings', (_, settings) => {
+  try {
+    const dataToSave = JSON.parse(JSON.stringify(settings))
+    // Encrypt sensitive fields
+    if (dataToSave.providers) {
+      Object.keys(dataToSave.providers).forEach(key => {
+        if (dataToSave.providers[key].apiKey) {
+          dataToSave.providers[key].apiKey = encrypt(dataToSave.providers[key].apiKey)
+        }
+      })
+    }
+    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(dataToSave, null, 2))
+    return true
+  } catch (e) {
+    log.error('Failed to save settings', e)
+    return false
   }
 })
 
