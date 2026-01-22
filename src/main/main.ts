@@ -117,46 +117,6 @@ ipcMain.handle('close-window', () => {
   }
 })
 
-// Settings management
-ipcMain.handle('get-settings', () => {
-  try {
-    if (fs.existsSync(SETTINGS_PATH)) {
-      const data = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'))
-      // Decrypt sensitive fields
-      if (data.providers) {
-        Object.keys(data.providers).forEach(key => {
-          if (data.providers[key].apiKey) {
-            data.providers[key].apiKey = decrypt(data.providers[key].apiKey)
-          }
-        })
-      }
-      return data
-    }
-  } catch (e) {
-    log.error('Failed to read settings', e)
-  }
-  return null
-})
-
-ipcMain.handle('save-settings', (_, settings) => {
-  try {
-    const dataToSave = JSON.parse(JSON.stringify(settings))
-    // Encrypt sensitive fields
-    if (dataToSave.providers) {
-      Object.keys(dataToSave.providers).forEach(key => {
-        if (dataToSave.providers[key].apiKey) {
-          dataToSave.providers[key].apiKey = encrypt(dataToSave.providers[key].apiKey)
-        }
-      })
-    }
-    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(dataToSave, null, 2))
-    return true
-  } catch (e) {
-    log.error('Failed to save settings', e)
-    return false
-  }
-})
-
 // Security Handlers
 ipcMain.handle('encrypt', (_, text: string) => {
   if (!text) return ''
