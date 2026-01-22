@@ -5,6 +5,7 @@ export interface AnkiNote {
     Front: string;
     Back: string;
   };
+  audioPath?: string;
   tags?: string[];
 }
 

@@ -39,6 +39,7 @@ let mainWindow: BrowserWindow | null = null
 import { LLMAdapter, LLMConfig } from './services/LLMAdapter'
 import { setupSettingsHandlers } from './services/SettingsService'
 import { setupAnkiHandlers } from './services/AnkiMainService'
+import { setupTTSHandlers } from './services/TTSService'
 
 const llmAdapter = new LLMAdapter()
 
@@ -72,6 +73,7 @@ function createWindow() {
 app.whenReady().then(() => {
   setupSettingsHandlers()
   setupAnkiHandlers()
+  setupTTSHandlers()
   createWindow()
 
   app.on('activate', () => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Settings as SettingsIcon, Image as ImageIcon, Trash2, Play, CheckCircle2, Pin, PinOff, AlertCircle, Minus, X } from 'lucide-react'
+import { Settings as SettingsIcon, Image as ImageIcon, Trash2, Play, CheckCircle2, Pin, PinOff, AlertCircle, Minus, X, Volume2, Music } from 'lucide-react'
 import SettingsPage from './pages/SettingsPage'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -14,6 +14,7 @@ interface LLMResult {
   english: string;
   chinese: string;
   grammar: string;
+  audioPath?: string;
 }
 
 function App() {
@@ -21,9 +22,15 @@ function App() {
   const [results, setResults] = useState<LLMResult[]>([])
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [ttsLoading, setTtsLoading] = useState(false)
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false)
   const [ankiError, setAnkiError] = useState<string | null>(null)
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null)
+
+  const playAudio = (path: string) => {
+    const audio = new Audio(`file://${path}`);
+    audio.play().catch(e => console.error('Failed to play audio:', e));
+  }
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type })
@@ -71,12 +78,34 @@ function App() {
       if (!res || res.length === 0) {
         throw new Error('AI returned empty results. Please try a different image or provider.')
       }
+      
       setResults(res)
+      
+      // TTS Synthesis
+      if (settings.tts && settings.tts.currentProvider) {
+        setTtsLoading(true)
+        const ttsResults = [...res]
+        for (let i = 0; i < ttsResults.length; i++) {
+          try {
+            const audioPath = await window.electronAPI.ttsSynthesize({
+              text: ttsResults[i].english,
+              provider: settings.tts.currentProvider,
+              config: settings.tts.providers[settings.tts.currentProvider]
+            })
+            ttsResults[i].audioPath = audioPath
+            setResults([...ttsResults]) // Update state one by one to show progress
+          } catch (e) {
+            console.error('TTS synthesis failed for sentence:', i, e)
+          }
+        }
+        setTtsLoading(false)
+      }
     } catch (error: any) {
       console.error('Analysis failed', error)
       showToast(error.message || 'Check your API key and network', 'error')
     } finally {
       setLoading(false)
+      setTtsLoading(false)
     }
   }
 
@@ -98,6 +127,7 @@ function App() {
             Front: result.chinese,
             Back: `${result.english}<br><br><div style="font-size: 0.8em; color: gray;">${result.grammar}</div>`,
           },
+          audioPath: result.audioPath
         })
       }
       showToast('Successfully synced to Anki!')
@@ -222,29 +252,46 @@ function App() {
                 </button>
               </div>
               {results.map((item, idx) => (
-                <div key={idx} className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
-                  <div className="text-sm font-semibold text-slate-800 leading-tight">
-                    <textarea 
-                      className="w-full bg-transparent focus:outline-none resize-none overflow-hidden break-words" 
-                      value={item.english} 
-                      rows={1}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
-                      }}
-                      ref={(tag) => {
-                        if (tag) {
-                          tag.style.height = 'auto';
-                          tag.style.height = tag.scrollHeight + 'px';
-                        }
-                      }}
-                      onChange={(e) => {
-                        const newResults = [...results]
-                        newResults[idx].english = e.target.value
-                        setResults(newResults)
-                      }}
-                    />
+                <div key={idx} className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2 relative group/item">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1 text-sm font-semibold text-slate-800 leading-tight">
+                      <textarea 
+                        className="w-full bg-transparent focus:outline-none resize-none overflow-hidden break-words" 
+                        value={item.english} 
+                        rows={1}
+                        onInput={(e) => {
+                          const target = e.target as HTMLTextAreaElement;
+                          target.style.height = 'auto';
+                          target.style.height = target.scrollHeight + 'px';
+                        }}
+                        ref={(tag) => {
+                          if (tag) {
+                            tag.style.height = 'auto';
+                            tag.style.height = tag.scrollHeight + 'px';
+                          }
+                        }}
+                        onChange={(e) => {
+                          const newResults = [...results]
+                          newResults[idx].english = e.target.value
+                          setResults(newResults)
+                        }}
+                      />
+                    </div>
+                    {item.audioPath ? (
+                      <button 
+                        onClick={() => playAudio(item.audioPath!)}
+                        className="p-1 text-blue-500 hover:bg-blue-50 rounded transition-colors shrink-0"
+                        title="Play Audio"
+                      >
+                        <Volume2 size={16} />
+                      </button>
+                    ) : (
+                      ttsLoading && (
+                        <div className="p-1 text-slate-300 animate-pulse shrink-0">
+                          <Music size={16} />
+                        </div>
+                      )
+                    )}
                   </div>
                   <div className="text-xs text-slate-600">
                     <textarea 

@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { ipcMain } from 'electron';
 import log from 'electron-log';
+import fs from 'fs';
+import { basename } from 'path';
 
 const ANKI_CONNECT_URL = 'http://127.0.0.1:8765';
 
@@ -11,26 +13,87 @@ export interface AnkiNote {
     Front: string;
     Back: string;
   };
+  audioPath?: string;
   tags?: string[];
 }
 
 export function setupAnkiHandlers() {
   ipcMain.handle('anki-check-connection', async () => {
     try {
-      // Use a proper version request to check connection
-      const response = await axios.post(ANKI_CONNECT_URL, {
-        action: 'version',
-        version: 6
-      }, { timeout: 2000 });
-      return response.data.result === 6;
+      const response = await fetch(ANKI_CONNECT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'version', version: 6 }),
+        signal: AbortSignal.timeout(2000)
+      });
+      const data: any = await response.json();
+      return data.result === 6;
     } catch (error) {
       return false;
+    }
+  });
+
+  ipcMain.handle('anki-store-media', async (_, { filename, path }: { filename: string, path: string }) => {
+    try {
+      const base64Content = fs.readFileSync(path, { encoding: 'base64' });
+      const response = await fetch(ANKI_CONNECT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Connection': 'close' },
+        body: JSON.stringify({
+          action: 'storeMediaFile',
+          version: 6,
+          params: {
+            filename: filename,
+            data: base64Content
+          }
+        }),
+        signal: AbortSignal.timeout(30000)
+      });
+      const data: any = await response.json();
+      if (data.error) throw new Error(data.error);
+      return data.result;
+    } catch (error: any) {
+      log.error('Failed to store media file:', error.message);
+      throw error;
     }
   });
 
   ipcMain.handle('anki-add-note', async (_, note: AnkiNote) => {
     const maxRetries = 3;
     let lastError: any = null;
+
+    // Handle audio if present
+    if (note.audioPath && fs.existsSync(note.audioPath)) {
+      try {
+        const filename = basename(note.audioPath);
+        const base64Content = fs.readFileSync(note.audioPath, { encoding: 'base64' });
+        
+        const mediaResponse = await fetch(ANKI_CONNECT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Connection': 'close' },
+          body: JSON.stringify({
+            action: 'storeMediaFile',
+            version: 6,
+            params: {
+              filename: filename,
+              data: base64Content
+            }
+          }),
+          signal: AbortSignal.timeout(30000)
+        });
+
+        const mediaData: any = await mediaResponse.json();
+        if (mediaData.error) {
+          log.error('AnkiConnect storeMediaFile error:', mediaData.error);
+        } else {
+          // Add [sound:...] to the Back field (or wherever appropriate)
+          note.fields.Back += `\n<div>[sound:${filename}]</div>`;
+        }
+      } catch (e: any) {
+        log.error('Failed to sync audio to Anki:', e.message);
+        // Continue adding the note even if audio sync fails
+      }
+    }
 
     for (let i = 0; i < maxRetries; i++) {
       try {

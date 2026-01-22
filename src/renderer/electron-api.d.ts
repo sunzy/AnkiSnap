@@ -8,6 +8,7 @@ export interface ElectronAPI {
   saveSettings: (settings: any) => Promise<boolean>;
   ankiCheckConnection: () => Promise<boolean>;
   ankiAddNote: (note: any) => Promise<any>;
+  ttsSynthesize: (params: { text: string, provider: string, config: any }) => Promise<string>;
   minimizeWindow: () => Promise<void>;
   closeWindow: () => Promise<void>;
 }
