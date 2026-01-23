@@ -78,7 +78,7 @@ export default function SettingsPage({ onClose }: { onClose: () => void }) {
   const currentProviderConfig = settings.providers[settings.currentProvider];
 
   return (
-    <div className="fixed inset-0 bg-white z-50 flex flex-col p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-white z-50 flex flex-col p-4 overflow-y-auto border border-gray-300/50 rounded-lg shadow-2xl">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <SettingsIcon size={20} /> Settings

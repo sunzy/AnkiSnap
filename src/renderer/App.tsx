@@ -179,9 +179,9 @@ function App() {
   }
 
   return (
-    <div className="h-screen w-screen bg-[#f5f5f7] flex flex-col overflow-hidden text-[#1d1d1f] font-sans select-none">
+    <div className="h-screen w-screen bg-[#f5f5f7] flex flex-col overflow-hidden text-[#1d1d1f] font-sans select-none border border-gray-300/50 rounded-lg shadow-inner">
       {/* Custom Title Bar */}
-       <div className="h-10 flex items-center justify-between px-4 bg-white/80 backdrop-blur-md border-b border-gray-200 drag shrink-0">
+       <div className="h-10 flex items-center justify-between px-4 bg-white/80 backdrop-blur-md border-b border-gray-200/80 drag shrink-0">
          <div className="flex items-center gap-2">
            <Logo size={20} />
            <span className="text-xs font-bold text-gray-700 tracking-tight">AnkiSnap</span>
