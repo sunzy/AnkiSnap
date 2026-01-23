@@ -59,4 +59,4 @@ The output will be located in the `dist-release` directory.
 Private.
 
 ---
-Developed with ❤️ by [changyoung](https://github.com/changyoung)
+Developed with ❤️ by AI
