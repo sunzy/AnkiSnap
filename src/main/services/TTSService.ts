@@ -1,5 +1,8 @@
 import { AzureTTSAdapter } from './tts/AzureTTSAdapter';
+import { EdgeTTSAdapter } from './tts/EdgeTTSAdapter';
 import { VolcengineTTSAdapter } from './tts/VolcengineTTSAdapter';
+import { OpenAITTSAdapter } from './tts/OpenAITTSAdapter';
+import { GoogleTTSAdapter } from './tts/GoogleTTSAdapter';
 import { ITTSAdapter, TTSConfig } from './tts/ITTSAdapter';
 import log from 'electron-log';
 import { app, ipcMain } from 'electron';
@@ -9,12 +12,21 @@ import { writeFileSync, mkdirSync, existsSync } from 'fs';
 export class TTSService {
   private adapters: Record<string, ITTSAdapter> = {
     azure: new AzureTTSAdapter(),
+    edge: new EdgeTTSAdapter(),
     volcengine: new VolcengineTTSAdapter(),
+    openai: new OpenAITTSAdapter(),
+    google: new GoogleTTSAdapter(),
   };
+
+  constructor() {
+    // Initialize audio directory on startup
+    this.getAudioDir();
+  }
 
   private getAudioDir() {
     const dir = join(app.getPath('userData'), 'temp_audio');
     if (!existsSync(dir)) {
+      log.info(`TTSService: Creating temp audio directory at ${dir}`);
       mkdirSync(dir, { recursive: true });
     }
     return dir;
@@ -31,10 +43,12 @@ export class TTSService {
     
     // Save to temp file
     const filename = `tts_${Date.now()}_${Math.random().toString(36).substring(7)}.mp3`;
-    const filepath = join(this.getAudioDir(), filename);
+    const audioDir = this.getAudioDir();
+    const filepath = join(audioDir, filename);
     writeFileSync(filepath, buffer);
     
     log.info(`TTSService: Audio saved to ${filepath}`);
+    log.info(`TTSService: Temp audio directory is ${audioDir}`);
     return filepath;
   }
 }

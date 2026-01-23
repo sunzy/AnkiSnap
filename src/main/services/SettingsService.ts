@@ -33,20 +33,34 @@ const store = new Store<Settings>({
       deepseek: { apiKey: '', baseURL: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-vl-chat' },
     },
     tts: {
-      currentProvider: 'azure',
+      currentProvider: 'edge',
       providers: {
+        edge: {
+          apiKey: '',
+          voice: 'en-US-AndrewNeural'
+        },
         azure: { 
           apiKey: '', 
-          region: 'eastus', 
-          endpoint: '', // Optional for Azure Speech, required for Azure OpenAI TTS
+          region: 'eastasia', 
+          endpoint: '', 
           model: 'tts-1', 
-          voice: 'en-US-AvaMultilingualNeural' 
+          voice: 'en-US-AndrewNeural' 
         },
         volcengine: { 
           apiKey: '', 
-          region: '', // Used as AppID for Volcengine
+          region: '', 
           endpoint: 'https://openspeech.bytedance.com/api/v1/tts',
           voice: 'bv001_streaming' 
+        },
+        openai: {
+          apiKey: '',
+          endpoint: 'https://api.openai.com/v1/audio/speech',
+          model: 'tts-1',
+          voice: 'alloy'
+        },
+        google: {
+          apiKey: '',
+          voice: 'en'
         }
       }
     },
@@ -57,7 +71,37 @@ const store = new Store<Settings>({
 
 export function setupSettingsHandlers() {
   ipcMain.handle('get-settings', () => {
-    const settings = store.store;
+    let settings = store.store;
+    
+    // Ensure TTS settings exist
+    if (!settings.tts) {
+      settings = {
+        ...settings,
+        tts: {
+          currentProvider: 'edge',
+          providers: {
+            edge: { apiKey: '', voice: 'en-US-AndrewNeural' },
+            azure: { apiKey: '', region: 'eastasia', endpoint: '', model: 'tts-1', voice: 'en-US-AndrewNeural' },
+            volcengine: { apiKey: '', region: '', endpoint: 'https://openspeech.bytedance.com/api/v1/tts', voice: 'bv001_streaming' },
+            openai: { apiKey: '', endpoint: 'https://api.openai.com/v1/audio/speech', model: 'tts-1', voice: 'alloy' }
+          }
+        }
+      };
+      store.store = settings;
+    }
+
+    // Ensure OpenAI TTS exists in providers if tts exists
+    if (settings.tts && !settings.tts.providers.openai) {
+      settings.tts.providers.openai = { apiKey: '', endpoint: 'https://api.openai.com/v1/audio/speech', model: 'tts-1', voice: 'alloy' };
+      store.store = settings;
+    }
+
+    // Ensure Google TTS exists
+    if (settings.tts && !settings.tts.providers.google) {
+      settings.tts.providers.google = { apiKey: '', voice: 'en' };
+      store.store = settings;
+    }
+
     // Decrypt API keys before sending to renderer
     const decryptedProviders = { ...settings.providers };
     for (const key in decryptedProviders) {

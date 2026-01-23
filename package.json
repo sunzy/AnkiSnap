@@ -30,13 +30,17 @@
   },
   "dependencies": {
     "axios": "^1.7.2",
+    "bufferutil": "^4.1.0",
     "clsx": "^2.1.1",
+    "edge-tts": "^1.0.1",
     "electron-log": "^5.4.3",
     "electron-store": "^8.1.0",
     "lucide-react": "^0.395.0",
+    "microsoft-cognitiveservices-speech-sdk": "^1.47.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.3.0"
+    "tailwind-merge": "^2.3.0",
+    "utf-8-validate": "^6.0.6"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

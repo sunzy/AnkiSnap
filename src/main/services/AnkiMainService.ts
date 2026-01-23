@@ -59,6 +59,11 @@ export function setupAnkiHandlers() {
   });
 
   ipcMain.handle('anki-add-note', async (_, note: AnkiNote) => {
+    log.info('AnkiMainService: Adding note to Anki', {
+      deck: note.deckName,
+      hasAudio: !!note.audioPath,
+      audioPath: note.audioPath
+    });
     const maxRetries = 3;
     let lastError: any = null;
 
@@ -66,6 +71,7 @@ export function setupAnkiHandlers() {
     if (note.audioPath && fs.existsSync(note.audioPath)) {
       try {
         const filename = basename(note.audioPath);
+        log.info(`AnkiMainService: Syncing media file ${filename}`);
         const base64Content = fs.readFileSync(note.audioPath, { encoding: 'base64' });
         
         const mediaResponse = await fetch(ANKI_CONNECT_URL, {
@@ -86,6 +92,7 @@ export function setupAnkiHandlers() {
         if (mediaData.error) {
           log.error('AnkiConnect storeMediaFile error:', mediaData.error);
         } else {
+          log.info(`AnkiMainService: Media file ${filename} stored successfully`);
           // Add [sound:...] to the Back field (or wherever appropriate)
           note.fields.Back += `\n<div>[sound:${filename}]</div>`;
         }
@@ -93,6 +100,8 @@ export function setupAnkiHandlers() {
         log.error('Failed to sync audio to Anki:', e.message);
         // Continue adding the note even if audio sync fails
       }
+    } else if (note.audioPath) {
+      log.warn(`AnkiMainService: Audio path provided but file not found: ${note.audioPath}`);
     }
 
     for (let i = 0; i < maxRetries; i++) {

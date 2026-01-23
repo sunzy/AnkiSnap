@@ -85,17 +85,27 @@ function App() {
       if (settings.tts && settings.tts.currentProvider) {
         setTtsLoading(true)
         const ttsResults = [...res]
+        const ttsProvider = settings.tts.currentProvider
+        let ttsConfig = { ...settings.tts.providers[ttsProvider] }
+
+        // Special handling for OpenAI TTS: fallback to general OpenAI key if empty
+        if (ttsProvider === 'openai' && !ttsConfig.apiKey) {
+          ttsConfig.apiKey = settings.providers.openai?.apiKey
+        }
+
         for (let i = 0; i < ttsResults.length; i++) {
           try {
             const audioPath = await window.electronAPI.ttsSynthesize({
               text: ttsResults[i].english,
-              provider: settings.tts.currentProvider,
-              config: settings.tts.providers[settings.tts.currentProvider]
+              provider: ttsProvider,
+              config: ttsConfig
             })
             ttsResults[i].audioPath = audioPath
             setResults([...ttsResults]) // Update state one by one to show progress
-          } catch (e) {
+          } catch (e: any) {
             console.error('TTS synthesis failed for sentence:', i, e)
+            showToast(`TTS Failed: ${e.message || 'Unknown error'}`, 'error')
+            break; // Stop trying if it fails once to avoid multiple error toasts
           }
         }
         setTtsLoading(false)
@@ -119,8 +129,11 @@ function App() {
     setLoading(true)
     try {
       const settings = await window.electronAPI.getSettings()
+      let addedCount = 0;
+      let updatedCount = 0;
+
       for (const result of results) {
-        await addNoteToAnki({
+        const syncResult = await addNoteToAnki({
           deckName: settings.ankiDeckName,
           modelName: 'Basic', // Or a custom model if preferred
           fields: {
@@ -129,8 +142,24 @@ function App() {
           },
           audioPath: result.audioPath
         })
+        
+        if (syncResult === 'updated') {
+          updatedCount++;
+        } else {
+          addedCount++;
+        }
       }
-      showToast('Successfully synced to Anki!')
+
+      let message = 'Successfully synced to Anki!';
+      if (updatedCount > 0 && addedCount > 0) {
+        message = `Synced: ${addedCount} added, ${updatedCount} updated.`;
+      } else if (updatedCount > 0) {
+        message = `Updated ${updatedCount} existing notes in Anki.`;
+      } else if (addedCount > 0) {
+        message = `Added ${addedCount} new notes to Anki.`;
+      }
+
+      showToast(message)
       setResults([])
       setImage(null)
     } catch (error: any) {

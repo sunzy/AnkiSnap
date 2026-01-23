@@ -5,54 +5,80 @@ import crypto from 'crypto';
 
 export class VolcengineTTSAdapter implements ITTSAdapter {
   async synthesize(text: string, config: TTSConfig): Promise<Buffer> {
-    log.info('TTS: Using Volcengine TTS (Placeholder implementation)');
+    log.info('TTS: Using Volcengine TTS');
     
-    // Volcengine TTS usually requires specific signing and a binary protocol over WebSocket or REST.
-    // This is a simplified REST example based on their documentation.
-    // Documentation: https://www.volcengine.com/docs/6561/71208
+    const url = 'https://openspeech.bytedance.com/api/v1/tts';
+    const appid = config.region; // AppID is stored in region field
+    const token = config.apiKey;
+    const cluster = config.endpoint || 'volcano_tts'; // Use endpoint field for Cluster ID
     
-    const url = config.endpoint || 'https://openspeech.bytedance.com/api/v1/tts';
-    const appid = config.region; // Reusing region field for appid in this adapter
-    
+    if (!appid || !token) {
+      throw new Error('Volcengine TTS requires AppID and Access Token (API Key)');
+    }
+
     try {
+      const requestData = {
+        app: {
+          appid: appid,
+          token: token,
+          cluster: cluster
+        },
+        user: {
+          uid: 'ankisnap_user'
+        },
+        audio: {
+          voice_type: config.voice || 'bv001_streaming',
+          encoding: 'mp3',
+          speed_ratio: 1.0,
+          volume_ratio: 1.0,
+          pitch_ratio: 1.0,
+        },
+        request: {
+          reqid: crypto.randomUUID(),
+          text: text,
+          text_type: 'plain',
+          operation: 'query'
+        }
+      };
+
+      log.info(`Volcengine TTS Request: AppID=${appid}, Cluster=${cluster}, Voice=${requestData.audio.voice_type}`);
+
       const response = await axios.post(
         url,
-        {
-          app: {
-            appid: appid,
-            token: config.apiKey,
-            cluster: 'volcano_tts'
-          },
-          user: {
-            uid: 'ankisnap_user'
-          },
-          audio: {
-            voice_type: config.voice || 'bv001_streaming',
-            encoding: 'mp3',
-            speed_ratio: 1.0,
-            volume_ratio: 1.0,
-            pitch_ratio: 1.0,
-          },
-          request: {
-            reqid: crypto.randomUUID(),
-            text: text,
-            text_type: 'plain',
-            operation: 'query'
-          }
-        },
+        requestData,
         {
           headers: {
-            'Authorization': `Bearer;${config.apiKey}`,
+            'Authorization': `Bearer;${token}`,
             'Content-Type': 'application/json'
           },
           responseType: 'arraybuffer'
         }
       );
 
-      // Volcengine returns a JSON if failed, or binary if success
-      // In a real implementation, you'd check the content-type
+      // Check if response is actually JSON (error) despite arraybuffer responseType
+      const contentType = response.headers['content-type'] || '';
+      if (contentType.includes('application/json')) {
+        const decoder = new TextDecoder('utf-8');
+        const jsonText = decoder.decode(response.data);
+        const errorJson = JSON.parse(jsonText);
+        log.error('Volcengine TTS API Error:', errorJson);
+        throw new Error(`Volcengine Error ${errorJson.code}: ${errorJson.message}`);
+      }
+
+      log.info(`Volcengine TTS Success: Received ${response.data.byteLength} bytes`);
       return Buffer.from(response.data);
     } catch (error: any) {
+      if (error.response && error.response.data instanceof ArrayBuffer) {
+        const decoder = new TextDecoder('utf-8');
+        const errorText = decoder.decode(error.response.data);
+        log.error('Volcengine TTS Error Response:', errorText);
+        try {
+          const errorJson = JSON.parse(errorText);
+          throw new Error(`Volcengine TTS failed (401/4xx): ${errorJson.message || errorText}`);
+        } catch {
+          throw new Error(`Volcengine TTS failed: ${errorText}`);
+        }
+      }
       log.error('Volcengine TTS failed:', error.message);
       throw error;
     }
