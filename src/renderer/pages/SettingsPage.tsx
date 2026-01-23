@@ -173,11 +173,9 @@ export default function SettingsPage({ onClose }: { onClose: () => void }) {
                 }}
                 className="w-full p-2 border rounded bg-white"
               >
-                <option value="google">Google Translate TTS (Free & Stable)</option>
                 <option value="openai">OpenAI TTS (Stable)</option>
                 <option value="azure">Azure Speech SDK (Needs Key)</option>
                 <option value="volcengine">Volcengine (火山引擎)</option>
-                <option value="edge">Microsoft Edge TTS (Currently Blocked)</option>
               </select>
             </div>
 
@@ -186,33 +184,31 @@ export default function SettingsPage({ onClose }: { onClose: () => void }) {
                 <h4 className="font-semibold text-xs uppercase text-blue-500">
                   {settings.tts.currentProvider.toUpperCase()} TTS Config
                 </h4>
-                {!['edge', 'google'].includes(settings.tts.currentProvider) && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      {settings.tts.currentProvider === 'volcengine' ? 'Access Token' : 'API Key / Token'}
-                    </label>
-                    <input
-                      type="password"
-                      value={settings.tts.providers[settings.tts.currentProvider].apiKey}
-                      onChange={(e) => {
-                        const tts = { ...settings.tts! };
-                        tts.providers[tts.currentProvider].apiKey = e.target.value;
-                        setSettings({ ...settings, tts });
-                      }}
-                      className="w-full p-2 border rounded"
-                      placeholder={
-                        settings.tts.currentProvider === 'openai' ? "Enter OpenAI API Key (leave empty to use general key)" : 
-                        settings.tts.currentProvider === 'volcengine' ? "Enter Volcengine Access Token" :
-                        "Enter TTS API Key"
-                      }
-                    />
-                    {settings.tts.currentProvider === 'volcengine' && (
-                      <p className="text-[10px] text-gray-400 mt-1">
-                        * Note: Use "Access Token" from Volcengine Speech Synthesis project page, NOT Secret Key.
-                      </p>
-                    )}
-                  </div>
-                )}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    {settings.tts.currentProvider === 'volcengine' ? 'Access Token' : 'API Key / Token'}
+                  </label>
+                  <input
+                    type="password"
+                    value={settings.tts.providers[settings.tts.currentProvider].apiKey}
+                    onChange={(e) => {
+                      const tts = { ...settings.tts! };
+                      tts.providers[tts.currentProvider].apiKey = e.target.value;
+                      setSettings({ ...settings, tts });
+                    }}
+                    className="w-full p-2 border rounded"
+                    placeholder={
+                      settings.tts.currentProvider === 'openai' ? "Enter OpenAI API Key (leave empty to use general key)" : 
+                      settings.tts.currentProvider === 'volcengine' ? "Enter Volcengine Access Token" :
+                      "Enter TTS API Key"
+                    }
+                  />
+                  {settings.tts.currentProvider === 'volcengine' && (
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      * Note: Use "Access Token" from Volcengine Speech Synthesis project page, NOT Secret Key.
+                    </p>
+                  )}
+                </div>
                 {settings.tts.currentProvider === 'openai' && (
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Base URL (optional)</label>
@@ -245,16 +241,6 @@ export default function SettingsPage({ onClose }: { onClose: () => void }) {
                       />
                     </div>
                   </>
-                )}
-                {settings.tts.currentProvider === 'edge' && (
-                  <div className="text-[10px] text-red-600 italic">
-                    * Microsoft Edge TTS is currently blocked by Microsoft servers (403). Please use Google or OpenAI instead.
-                  </div>
-                )}
-                {settings.tts.currentProvider === 'google' && (
-                  <div className="text-[10px] text-green-600 italic">
-                    * Google Translate TTS is free and stable. No API key required.
-                  </div>
                 )}
                 {settings.tts.currentProvider === 'volcengine' && (
                   <>
@@ -303,7 +289,6 @@ export default function SettingsPage({ onClose }: { onClose: () => void }) {
                     }}
                     className="w-full p-2 border rounded"
                     placeholder={
-                      settings.tts.currentProvider === 'google' ? 'en (language code)' :
                       settings.tts.currentProvider === 'azure' ? 'en-US-AvaMultilingualNeural' : 
                       'bv001_streaming'
                     }

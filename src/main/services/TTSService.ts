@@ -1,8 +1,6 @@
 import { AzureTTSAdapter } from './tts/AzureTTSAdapter';
-import { EdgeTTSAdapter } from './tts/EdgeTTSAdapter';
 import { VolcengineTTSAdapter } from './tts/VolcengineTTSAdapter';
 import { OpenAITTSAdapter } from './tts/OpenAITTSAdapter';
-import { GoogleTTSAdapter } from './tts/GoogleTTSAdapter';
 import { ITTSAdapter, TTSConfig } from './tts/ITTSAdapter';
 import log from 'electron-log';
 import { app, ipcMain } from 'electron';
@@ -12,10 +10,8 @@ import { writeFileSync, mkdirSync, existsSync } from 'fs';
 export class TTSService {
   private adapters: Record<string, ITTSAdapter> = {
     azure: new AzureTTSAdapter(),
-    edge: new EdgeTTSAdapter(),
     volcengine: new VolcengineTTSAdapter(),
     openai: new OpenAITTSAdapter(),
-    google: new GoogleTTSAdapter(),
   };
 
   constructor() {
