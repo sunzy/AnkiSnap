@@ -92,6 +92,10 @@ function App() {
         if (ttsProvider === 'openai' && !ttsConfig.apiKey) {
           ttsConfig.apiKey = settings.providers.openai?.apiKey
         }
+        // Special handling for DashScope TTS: fallback to general DashScope key if empty
+        if (ttsProvider === 'dashscope' && !ttsConfig.apiKey) {
+          ttsConfig.apiKey = settings.providers.dashscope?.apiKey
+        }
 
         for (let i = 0; i < ttsResults.length; i++) {
           try {

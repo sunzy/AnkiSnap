@@ -1,6 +1,7 @@
 import { AzureTTSAdapter } from './tts/AzureTTSAdapter';
 import { VolcengineTTSAdapter } from './tts/VolcengineTTSAdapter';
 import { OpenAITTSAdapter } from './tts/OpenAITTSAdapter';
+import { DashScopeTTSAdapter } from './tts/DashScopeTTSAdapter';
 import { ITTSAdapter, TTSConfig } from './tts/ITTSAdapter';
 import log from 'electron-log';
 import { app, ipcMain } from 'electron';
@@ -12,6 +13,7 @@ export class TTSService {
     azure: new AzureTTSAdapter(),
     volcengine: new VolcengineTTSAdapter(),
     openai: new OpenAITTSAdapter(),
+    dashscope: new DashScopeTTSAdapter(),
   };
 
   constructor() {

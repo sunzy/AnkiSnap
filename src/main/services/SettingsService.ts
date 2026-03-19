@@ -33,12 +33,8 @@ const store = new Store<Settings>({
       deepseek: { apiKey: '', baseURL: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-vl-chat' },
     },
     tts: {
-      currentProvider: 'edge',
+      currentProvider: 'openai',
       providers: {
-        edge: {
-          apiKey: '',
-          voice: 'en-US-AndrewNeural'
-        },
         azure: { 
           apiKey: '', 
           region: 'eastasia', 
@@ -58,9 +54,11 @@ const store = new Store<Settings>({
           model: 'tts-1',
           voice: 'alloy'
         },
-        google: {
+        dashscope: {
           apiKey: '',
-          voice: 'en'
+          endpoint: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2audio/text2audio',
+          model: 'cosyvoice-v1',
+          voice: 'longxiaochun'
         }
       }
     },
@@ -73,20 +71,53 @@ export function setupSettingsHandlers() {
   ipcMain.handle('get-settings', () => {
     let settings = store.store;
     
+    // Ensure LLM providers exist
+    if (!settings.providers) {
+      settings.providers = {
+        openai: { apiKey: '', baseURL: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini' },
+        dashscope: { apiKey: '', baseURL: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation', model: 'qwen-vl-max' },
+        deepseek: { apiKey: '', baseURL: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-vl-chat' },
+      };
+      store.store = settings;
+    } else {
+      if (!settings.providers.openai) {
+        settings.providers.openai = { apiKey: '', baseURL: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini' };
+      }
+      if (!settings.providers.dashscope) {
+        settings.providers.dashscope = { apiKey: '', baseURL: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation', model: 'qwen-vl-max' };
+      }
+      if (!settings.providers.deepseek) {
+        settings.providers.deepseek = { apiKey: '', baseURL: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-vl-chat' };
+      }
+      store.store = settings;
+    }
+
     // Ensure TTS settings exist
     if (!settings.tts) {
       settings = {
         ...settings,
         tts: {
-          currentProvider: 'edge',
+          currentProvider: 'openai',
           providers: {
-            edge: { apiKey: '', voice: 'en-US-AndrewNeural' },
             azure: { apiKey: '', region: 'eastasia', endpoint: '', model: 'tts-1', voice: 'en-US-AndrewNeural' },
             volcengine: { apiKey: '', region: '', endpoint: 'https://openspeech.bytedance.com/api/v1/tts', voice: 'bv001_streaming' },
-            openai: { apiKey: '', endpoint: 'https://api.openai.com/v1/audio/speech', model: 'tts-1', voice: 'alloy' }
+            openai: { apiKey: '', endpoint: 'https://api.openai.com/v1/audio/speech', model: 'tts-1', voice: 'alloy' },
+            dashscope: { apiKey: '', endpoint: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2audio/text2audio', model: 'cosyvoice-v1', voice: 'longxiaochun' }
           }
         }
       };
+      store.store = settings;
+    } else {
+      // Clean up legacy providers
+      if (settings.tts.currentProvider === 'edge' || settings.tts.currentProvider === 'google') {
+        settings.tts.currentProvider = 'openai';
+      }
+      if ('edge' in settings.tts.providers) {
+        delete (settings.tts.providers as any).edge;
+      }
+      if ('google' in settings.tts.providers) {
+        delete (settings.tts.providers as any).google;
+      }
       store.store = settings;
     }
 
@@ -96,11 +127,12 @@ export function setupSettingsHandlers() {
       store.store = settings;
     }
 
-    // Ensure Google TTS exists
-    if (settings.tts && !settings.tts.providers.google) {
-      settings.tts.providers.google = { apiKey: '', voice: 'en' };
+    // Ensure DashScope TTS exists
+    if (settings.tts && !settings.tts.providers.dashscope) {
+      settings.tts.providers.dashscope = { apiKey: '', endpoint: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2audio/text2audio', model: 'cosyvoice-v1', voice: 'longxiaochun' };
       store.store = settings;
     }
+
 
     // Decrypt API keys before sending to renderer
     const decryptedProviders = { ...settings.providers };

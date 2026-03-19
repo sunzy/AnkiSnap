@@ -13,7 +13,7 @@ export class AzureTTSAdapter implements ITTSAdapter {
       try {
         const speechConfig = sdk.SpeechConfig.fromSubscription(
           config.apiKey, 
-          config.region
+          config.region as string
         );
         
         // Set voice name

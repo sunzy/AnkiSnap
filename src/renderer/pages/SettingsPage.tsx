@@ -75,7 +75,7 @@ export default function SettingsPage({ onClose }: { onClose: () => void }) {
     </div>
   );
 
-  const currentProviderConfig = settings.providers[settings.currentProvider];
+  const currentProviderConfig = settings.providers[settings.currentProvider] || { apiKey: '', baseURL: '', model: '' };
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col p-4 overflow-y-auto border border-gray-300/50 rounded-lg shadow-2xl">
@@ -168,7 +168,7 @@ export default function SettingsPage({ onClose }: { onClose: () => void }) {
               <select
                 value={settings.tts?.currentProvider || 'azure'}
                 onChange={(e) => {
-                  const tts = settings.tts || { currentProvider: 'edge', providers: {} };
+                  const tts = settings.tts || { currentProvider: 'azure', providers: {} };
                   setSettings({ ...settings, tts: { ...tts, currentProvider: e.target.value } });
                 }}
                 className="w-full p-2 border rounded bg-white"
@@ -176,6 +176,7 @@ export default function SettingsPage({ onClose }: { onClose: () => void }) {
                 <option value="openai">OpenAI TTS (Stable)</option>
                 <option value="azure">Azure Speech SDK (Needs Key)</option>
                 <option value="volcengine">Volcengine (火山引擎)</option>
+                <option value="dashscope">DashScope (阿里百炼/千问)</option>
               </select>
             </div>
 
@@ -200,12 +201,18 @@ export default function SettingsPage({ onClose }: { onClose: () => void }) {
                     placeholder={
                       settings.tts.currentProvider === 'openai' ? "Enter OpenAI API Key (leave empty to use general key)" : 
                       settings.tts.currentProvider === 'volcengine' ? "Enter Volcengine Access Token" :
+                      settings.tts.currentProvider === 'dashscope' ? "Enter DashScope API Key" :
                       "Enter TTS API Key"
                     }
                   />
                   {settings.tts.currentProvider === 'volcengine' && (
                     <p className="text-[10px] text-gray-400 mt-1">
                       * Note: Use "Access Token" from Volcengine Speech Synthesis project page, NOT Secret Key.
+                    </p>
+                  )}
+                  {settings.tts.currentProvider === 'dashscope' && (
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      * Note: You can use your DashScope LLM API Key here.
                     </p>
                   )}
                 </div>
@@ -278,7 +285,22 @@ export default function SettingsPage({ onClose }: { onClose: () => void }) {
                   </>
                 )}
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Voice ID / Name / Lang</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    {settings.tts.currentProvider === 'dashscope' ? 'Model Name' : 'Voice ID / Name / Lang'}
+                  </label>
+                  {settings.tts.currentProvider === 'dashscope' && (
+                    <input
+                      type="text"
+                      value={settings.tts.providers[settings.tts.currentProvider].model || ''}
+                      onChange={(e) => {
+                        const tts = { ...settings.tts! };
+                        tts.providers[tts.currentProvider].model = e.target.value;
+                        setSettings({ ...settings, tts });
+                      }}
+                      className="w-full p-2 border rounded mb-2"
+                      placeholder="cosyvoice-v1"
+                    />
+                  )}
                   <input
                     type="text"
                     value={settings.tts.providers[settings.tts.currentProvider].voice || ''}
@@ -290,6 +312,7 @@ export default function SettingsPage({ onClose }: { onClose: () => void }) {
                     className="w-full p-2 border rounded"
                     placeholder={
                       settings.tts.currentProvider === 'azure' ? 'en-US-AvaMultilingualNeural' : 
+                      settings.tts.currentProvider === 'dashscope' ? 'longxiaochun' :
                       'bv001_streaming'
                     }
                   />
